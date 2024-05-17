@@ -36,6 +36,9 @@ Documentation = "https://github.com/danialkeimasi/hto#readme"
 Issues = "https://github.com/danialkeimasi/hto/issues"
 Source = "https://github.com/danialkeimasi/hto"
 
+[project.scripts]
+hto = "hto.__main__:app"
+
 [tool.hatch.version]
 path = "hto/__about__.py"
 

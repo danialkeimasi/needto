@@ -5,15 +5,19 @@ import sys
 import platform
 from simple_term_menu import TerminalMenu
 import typer
-from groq import Groq
+import groq
 import rich.console
 import rich.prompt
 import subprocess
 from rich.markdown import Markdown
 
-client = Groq(
-    api_key=os.environ.get("GROQ_API_KEY"),
-)
+try:
+    client = groq.Groq(
+        api_key=os.environ.get("GROQ_API_KEY"),
+    )
+except groq.GroqError:
+    print("Please set GROQ_API_KEY environment variable.")
+    sys.exit(1)
 
 app = typer.Typer()
 
