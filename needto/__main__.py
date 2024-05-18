@@ -68,7 +68,7 @@ def prompt_menu(
     *,
     ask_for_edit=False,
     confirm_prompt="",
-    preview_command: str | typing.Callable[[str], str],
+    preview_command: None | str | typing.Callable[[str], str] = None,
 ):
     console = rich.console.Console()
     NO_OP = "-- explain more --"
