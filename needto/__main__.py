@@ -1,3 +1,4 @@
+import typing
 import os
 import click
 import json
@@ -40,34 +41,41 @@ class AIClient:
         self.messages = messages
 
     def ask(self, prompt: str, print_prompt=False, output_limit: int = 2000):
-        prompt = prompt.strip()
+        prompt = prompt.strip()[:output_limit]
         console = rich.console.Console()
         if print_prompt:
             print()
             console.print(prompt)
             print()
-        self.messages.append({"role": "user", "content": prompt[:output_limit]})
 
-        answer = ""
-        for try_count in range(3):
-            chat_completion = client.chat.completions.create(
-                messages=self.messages, model=self.model_name
-            )
-            answer = chat_completion.choices[0].message.content
-            self.messages.append({"role": "system", "content": answer})
-            try:
-                return json.loads(answer.replace(r"\'", "\\'"))
-            except json.decoder.JSONDecodeError:
-                with open(f"error_{try_count}.txt", "w") as fp:
-                    fp.write(answer)
+        self.messages.append({"role": "user", "content": prompt})
+        chat_completion = client.chat.completions.create(
+            messages=self.messages,
+            model=self.model_name,
+            response_format={"type": "json_object"},
+        )
+        answer = chat_completion.choices[0].message.content
+        self.messages.append({"role": "system", "content": answer})
+        try:
+            return json.loads(answer)
+        except json.decoder.JSONDecodeError:
+            with open("error.txt", "w") as fp:
+                fp.write(answer)
 
 
-def prompt_commands(recommended_commands: list[str], *, ask_for_edit=False):
+def prompt_menu(
+    recommended_commands: list[str],
+    *,
+    ask_for_edit=False,
+    confirm_prompt="",
+    preview_command: str | typing.Callable[[str], str],
+):
     console = rich.console.Console()
-    NO_OP = "----"
+    NO_OP = "-- explain more --"
     commands_to_prompt: list[str] = [NO_OP] + recommended_commands
     menu_entry_index = TerminalMenu(
         [command.replace("|", r"\|") for command in commands_to_prompt],
+        preview_command=preview_command,
     ).show()
     selected_command: str = commands_to_prompt[menu_entry_index]
 
@@ -92,58 +100,59 @@ def prompt_commands(recommended_commands: list[str], *, ask_for_edit=False):
     if not sys.stdin.isatty():
         sys.stdin = open("/dev/tty")
 
-    if not rich.prompt.Confirm.ask(f"Running '{selected_command}'", default=False):
+    if confirm_prompt and not rich.prompt.Confirm.ask(
+        f"{confirm_prompt} '{selected_command}'", default=False
+    ):
         return
 
     return selected_command
 
 
-def run_command(command: str):
-    console = rich.console.Console()
-    try:
-        result = subprocess.run(command, shell=True, check=True)
-    except subprocess.CalledProcessError as e:
-        console.print(e)
-        sys.exit(e.returncode)
-    else:
-        console.print(f"Successfully ran '{command}'.")
-        sys.exit(result.returncode)
-
-
 @app.command()
-def cli(prompt: str):
+def find(prompt: str):
     console = rich.console.Console()
     system_prompt = """
     You are a CLI code generator. User will search for a command, you respond with a list of CLI commands.
-    Always answer in json in all your responses starting with '{' and ending with '}' with these keys:
+    Always answer in json in all your responses with these keys:
     "description" (str), "warning" (str only if necessary), "commands" (list of str), needs_manual_change (bool).
     """
+    console = rich.console.Console()
     ai_client = AIClient(system_prompt=system_prompt)
     parsed_answer = ai_client.ask(prompt)
 
-    console.print(parsed_answer["description"], style="bold blue")
-    if warning := parsed_answer.get("warning"):
-        console.print(warning, style="bold yellow")
+    while True:
+        console.print(parsed_answer["description"], style="bold blue")
+        if warning := parsed_answer.get("warning"):
+            console.print(warning, style="bold yellow")
 
-    if selected_command := prompt_commands(
-        parsed_answer["commands"],
-        ask_for_edit=parsed_answer["needs_manual_change"],
-    ):
-        run_command(selected_command)
+        if selected_command := prompt_menu(
+            parsed_answer["commands"],
+            ask_for_edit=parsed_answer["needs_manual_change"],
+            confirm_prompt="Running",
+        ):
+            try:
+                result = subprocess.run(selected_command, shell=True, check=True)
+            except subprocess.CalledProcessError as e:
+                console.print(e)
+                sys.exit(e.returncode)
+            else:
+                console.print(f"Successfully ran '{selected_command}'.")
+                sys.exit(result.returncode)
+        else:
+            if user_prompt := input("> "):
+                print()
+                parsed_answer = ai_client.ask(user_prompt)
+            else:
+                break
 
 
 @app.command()
 def ask(prompt: str):
-    console = rich.console.Console()
     system_prompt = """
-    You are a AI assistant.
+    You are a AI assistant. User will ask you something and you will help him find their answer.
     You can ask user to run commands and send the output of commands to you, to help you answer their questions.
-    Always answer in json in all your responses starting with '{' and ending with '}' with these keys:
-    "help" (str), "commands_to_explore" (list of str only if necessary), "files_to_save": (object with name to content)
-
-    Example response:
-
-    {"help": "here is python script", "commands_to_explore": [], "files_to_save": {"main.py": "import request\nrequest.get("https://google.com")"}}
+    Always answer in json in all your responses with these keys:
+    "help" (markdown str), "commands_to_explore" (list of str only if necessary)
     """
     console = rich.console.Console()
     ai_client = AIClient(system_prompt=system_prompt)
@@ -151,17 +160,9 @@ def ask(prompt: str):
     while True:
         console.print(Markdown(parsed_answer["help"]))
         print()
-        for file_name, file_content in parsed_answer["files_to_save"].items():
-            while os.path.exists(file_name):
-                file_name = rich.prompt.Prompt.ask(
-                    f"[bold red]'{file_name}' already exists[/bold red]. Please enter a new name",
-                )
-            with open(file_name, "w") as f:
-                f.write(file_content)
-            console.print(f"'{file_name}' saved.", style="bold green")
 
         if commands := parsed_answer.get("commands_to_explore"):
-            if command := prompt_commands(commands):
+            if command := prompt_menu(commands):
                 try:
                     command_output = subprocess.run(
                         command, shell=True, capture_output=True
@@ -187,6 +188,43 @@ def ask(prompt: str):
                     parsed_answer = ai_client.ask(user_prompt)
                 else:
                     break
+        else:
+            break
+
+
+@app.command()
+def write(prompt: str):
+    system_prompt = """
+    You are a AI assistant. User will ask you to write a code.
+    You can ask user to clarify what they need and then run the code.
+    Always answer in json in all your responses with these keys:
+    "help" (markdown str), "files_to_save": (object with name to content)
+    """
+    console = rich.console.Console()
+    ai_client = AIClient(system_prompt=system_prompt)
+    parsed_answer = ai_client.ask(prompt)
+    while True:
+        console.print(Markdown(parsed_answer["help"]))
+        files_to_save = parsed_answer.get("files_to_save", {})
+        print()
+        if files_to_save:
+            if selected_file_name := prompt_menu(
+                list(files_to_save.keys()),
+                preview_command=lambda file_name: files_to_save.get(file_name, ""),
+            ):
+                file_content = files_to_save[selected_file_name]
+                while os.path.exists(selected_file_name):
+                    selected_file_name = rich.prompt.Prompt.ask(
+                        f"[bold red]'{selected_file_name}' already exists[/bold red]. Please enter a new name",
+                    )
+                with open(selected_file_name, "w") as f:
+                    f.write(file_content)
+                console.print(f"'{selected_file_name}' saved.", style="bold green")
+                break
+
+        if user_prompt := input("> "):
+            print()
+            parsed_answer = ai_client.ask(user_prompt)
         else:
             break
 

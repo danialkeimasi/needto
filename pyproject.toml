@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "hto"
+name = "needto"
 dynamic = ["version"]
 description = 'Ask AI for help you in your terminal.'
 readme = "README.md"
@@ -32,34 +32,34 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/danialkeimasi/hto#readme"
-Issues = "https://github.com/danialkeimasi/hto/issues"
-Source = "https://github.com/danialkeimasi/hto"
+Documentation = "https://github.com/danialkeimasi/needto#readme"
+Issues = "https://github.com/danialkeimasi/needto/issues"
+Source = "https://github.com/danialkeimasi/needto"
 
 [project.scripts]
-hto = "hto.__main__:app"
+needto = "needto.__main__:app"
 
 [tool.hatch.version]
-path = "hto/__about__.py"
+path = "needto/__about__.py"
 
 [tool.hatch.envs.types]
 extra-dependencies = [
   "mypy>=1.0.0",
 ]
 [tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:hto tests}"
+check = "mypy --install-types --non-interactive {args:needto tests}"
 
 [tool.coverage.run]
-source_pkgs = ["hto", "tests"]
+source_pkgs = ["needto", "tests"]
 branch = true
 parallel = true
 omit = [
-  "hto/__about__.py",
+  "needto/__about__.py",
 ]
 
 [tool.coverage.paths]
-hto = ["hto", "*/hto/hto"]
-tests = ["tests", "*/hto/tests"]
+needto = ["needto", "*/needto/needto"]
+tests = ["tests", "*/needto/tests"]
 
 [tool.coverage.report]
 exclude_lines = [

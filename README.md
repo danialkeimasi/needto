@@ -1,7 +1,7 @@
-# hto
+# needto
 
-[![PyPI - Version](https://img.shields.io/pypi/v/hto.svg)](https://pypi.org/project/hto)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/hto.svg)](https://pypi.org/project/hto)
+[![PyPI - Version](https://img.shields.io/pypi/v/needto.svg)](https://pypi.org/project/needto)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/needto.svg)](https://pypi.org/project/needto)
 
 -----
 
@@ -13,9 +13,9 @@
 ## Installation
 
 ```console
-pip install hto
+pip install needto
 ```
 
 ## License
 
-`hto` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
+`needto` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
