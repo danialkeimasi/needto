@@ -1,4 +1,5 @@
 import typing
+import functools
 import click
 import sys
 from simple_term_menu import TerminalMenu
@@ -10,6 +11,16 @@ EDITOR_TEMPLATE = """{command}
 # save this file to confirm the command or quit to skip it.
 # after save, you will {confirm_prompt} this command.
 """
+
+
+@functools.cache
+def stdin_is_atty():
+    return sys.stdin.isatty()
+
+
+@functools.cache
+def get_tty_file():
+    return open("/dev/tty")
 
 
 def prompt_menu(
@@ -30,7 +41,7 @@ def prompt_menu(
     if selected_item == no_op_value:
         return
 
-    if ask_for_edit and sys.stdin.isatty():
+    if ask_for_edit and stdin_is_atty():
         if edited_text := click.edit(
             text=EDITOR_TEMPLATE.format(
                 command=selected_item, confirm_prompt=confirm_prompt.lower()
@@ -46,8 +57,8 @@ def prompt_menu(
         else:
             return
 
-    if not sys.stdin.isatty():
-        sys.stdin = open("/dev/tty")
+    if not stdin_is_atty():
+        sys.stdin = get_tty_file()
 
         if confirm_prompt and not rich.prompt.Confirm.ask(
             f"{confirm_prompt} '{selected_item}'", default=False
