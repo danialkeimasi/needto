@@ -138,7 +138,7 @@ def write(prompt_list: list[str]):
                 break
 
         console.print("Leave blank to end conversation", style="blue bold")
-        if user_prompt := ("> ",):
+        if user_prompt := input("> "):
             print()
             parsed_answer = ai_client.ask(user_prompt)
         else:
