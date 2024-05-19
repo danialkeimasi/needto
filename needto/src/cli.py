@@ -5,7 +5,6 @@ import typer
 import rich.console
 import rich.prompt
 import subprocess
-from rich.markdown import Markdown
 
 from .config import config_manager
 from .ai_client import AIClient
@@ -20,8 +19,10 @@ def do(prompt_list: list[str]):
     console = rich.console.Console()
     system_prompt = """
     You are a CLI code generator. User will search for a command, you respond with a list of CLI commands.
-    Always answer in json in all your responses with these keys:
+    Don't write markdown.
+    Response should always be JSON stars with "{" and ends with "}" with these keys:
     "description" (str), "warning" (str only if necessary), "commands" (list of str).
+    Don't explain at begin or end of JSON.
     """
     console = rich.console.Console()
     ai_client = AIClient(system_prompt=system_prompt)
@@ -62,14 +63,16 @@ def ask(prompt_list: list[str]):
     You are a AI assistant. User will ask you something and you will help him find their answer.
     You can ask user to run commands and send the output of commands to you, to help you answer their questions.
     Don't recommend commands that can change the system state.
-    Always answer in json in all your responses with these keys:
-    "help" (markdown str), "commands_to_explore" (list of str only if necessary)
+    Don't write markdown.
+    Response should always be JSON stars with "{" and ends with "}" with these keys:
+    "help" (text), "commands_to_explore" (list of str only if necessary)
+    Don't explain at begin or end of JSON.
     """
     console = rich.console.Console()
     ai_client = AIClient(system_prompt=system_prompt)
     parsed_answer = ai_client.ask(prompt)
     while True:
-        console.print(Markdown(parsed_answer["help"]))
+        console.print(parsed_answer["help"])
         print()
 
         if commands := parsed_answer.get("commands_to_explore"):
@@ -112,14 +115,16 @@ def write(prompt_list: list[str]):
     system_prompt = """
     You are a AI assistant. User will ask you to write a code.
     You can ask user to clarify what they need and then run the code.
-    Always answer in json in all your responses with these keys:
-    "help" (markdown str), "files_to_save": (object with name to content)
+    Don't write markdown.
+    Response should always be JSON stars with "{" and ends with "}" with these keys:
+    "help" (text), "files_to_save": (object with name to content)
+    Don't explain at begin or end of JSON.
     """
     console = rich.console.Console()
     ai_client = AIClient(system_prompt=system_prompt)
     parsed_answer = ai_client.ask(prompt)
     while True:
-        console.print(Markdown(parsed_answer["help"]))
+        console.print(parsed_answer["help"])
         files_to_save = parsed_answer.get("files_to_save", {})
         print()
         if files_to_save:

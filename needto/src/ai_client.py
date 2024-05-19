@@ -1,3 +1,4 @@
+import time
 import sys
 import rich.console
 import rich.prompt
@@ -57,11 +58,25 @@ class AIClient:
             print()
 
         self.messages.append({"role": "user", "content": prompt})
-        chat_completion = self.client.chat.completions.create(
-            messages=self.messages,
-            model=config_manager.values.model_name,
-            response_format={"type": "json_object"},
-        )
-        answer = chat_completion.choices[0].message.content
-        self.messages.append({"role": "system", "content": answer})
-        return json.loads(answer)
+
+        retry_count = 3
+        for _ in range(retry_count):
+            chat_completion = self.client.chat.completions.create(
+                messages=self.messages,
+                model=config_manager.values.model_name,
+                # response_format={"type": "json_object"},
+            )
+            answer = chat_completion.choices[0].message.content
+
+            try:
+                parsed_answer = json.loads(answer)
+            except json.JSONDecodeError:
+                self.messages.append(
+                    {
+                        "role": "user",
+                        "content": "Last response was not JSON. Always write JSON.",
+                    }
+                )
+            else:
+                self.messages.append({"role": "system", "content": answer})
+                return parsed_answer
