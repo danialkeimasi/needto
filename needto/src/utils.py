@@ -8,8 +8,8 @@ import rich.prompt
 
 EDITOR_TEMPLATE = """{command}
 
-# save this file to confirm the command or quit to skip it.
-# after save, you will {confirm_prompt} this command.
+# Save this file to confirm the command or quit to skip it.
+# After save, you will {confirm_prompt} this command.
 """
 
 
@@ -84,9 +84,13 @@ def prompt_menu_and_print(
         preview_command=preview_command,
     )
 
+    items_to_print = items
+    if selected_item and selected_item not in items:
+        items_to_print.append(selected_item)
+
     console = rich.console.Console()
     print()
-    for command in items:
+    for command in items_to_print:
         if command == selected_item:
             console.print(f"$ {command}", style="black on white")
         else:
