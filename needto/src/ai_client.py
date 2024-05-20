@@ -89,3 +89,6 @@ class AIClient:
             else:
                 self.messages.append({"role": "system", "content": answer})
                 return parsed_answer
+
+        console.print("Failed to get response from AI model.")
+        sys.exit(1)

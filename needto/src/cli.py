@@ -134,7 +134,7 @@ def write(prompt_list: list[str]):
             ):
                 file_content = files_to_save[selected_file_name]
                 while os.path.exists(selected_file_name):
-                    selected_file_name = console.print(
+                    selected_file_name = rich.prompt.Prompt.ask(
                         f"[bold red]'{selected_file_name}' already exists[/bold red]. Please enter a new name",
                     )
                 with open(selected_file_name, "w") as f:

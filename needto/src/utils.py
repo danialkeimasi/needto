@@ -36,7 +36,11 @@ def prompt_menu(
         [command.replace("|", r"\|") for command in items_to_prompt],
         preview_command=preview_command,
     ).show()
-    selected_item: str = items_to_prompt[menu_entry_index]
+
+    if isinstance(menu_entry_index, int):
+        selected_item: str = items_to_prompt[menu_entry_index]
+    else:
+        return
 
     if selected_item == no_op_value:
         return
@@ -65,7 +69,7 @@ def prompt_menu(
         ):
             return
 
-    return selected_item
+    return typing.cast(str, selected_item)
 
 
 def prompt_menu_and_print(
