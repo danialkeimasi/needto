@@ -1,4 +1,3 @@
-import time
 import sys
 import rich.console
 import rich.prompt
@@ -45,6 +44,12 @@ class AIClient:
             )
         self.messages = messages
 
+        if not config_manager.values.groq_api_key:
+            console.print(
+                "No GROQ API key found. Please run `needto config` to add it."
+            )
+            sys.exit(1)
+
         self.client = groq.Groq(
             api_key=config_manager.values.groq_api_key,
         )
@@ -58,6 +63,10 @@ class AIClient:
             print()
 
         self.messages.append({"role": "user", "content": prompt})
+
+        if not config_manager.values.model_name:
+            console.print("No model name found. Please run `needto config` to add it.")
+            sys.exit(1)
 
         retry_count = 3
         for _ in range(retry_count):
