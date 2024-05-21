@@ -151,40 +151,6 @@ def write(prompt_list: list[str]):
             break
 
 
-@app.command(help="Monitor system and notify.")
-async def monitor(
-    prompt_list: list[str],
-    monitor_script: str,
-    notify_script: str,
-    sleep_seconds: int = 60,
-):
-    prompt = " ".join(prompt_list)
-    system_prompt = """
-    You are a system monitor. User will ask you to monitor a system and notify them if something goes wrong.
-    Don't write markdown.
-    Response should always be JSON stars with "{" and ends with "}" with these keys:
-    "message" (text), "should_notify" (bool)
-    Don't explain at begin or end of JSON.
-    """
-    console = rich.console.Console()
-    ai_client = AIClient(system_prompt=system_prompt)
-    parsed_answer = ai_client.ask(prompt)
-
-    while True:
-        await asyncio.sleep(sleep_seconds)
-        print("running monitor script")
-        monitor_output = subprocess.run(monitor_script, shell=True, capture_output=True)
-        ai_client.ask(
-            "Output of monitor script:\n"
-            + f"stdout:\n{monitor_output.stdout.decode()}\n"
-            + (
-                f"stderr:\n{monitor_output.stderr.decode()}"
-                if monitor_output.stderr
-                else ""
-            )
-        )
-
-
 @app.command(help=f"Open editor for '{config_manager.config_path}'.")
 def config():
     click.edit(filename=config_manager.config_path)
