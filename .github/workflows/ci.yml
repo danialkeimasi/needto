@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: |
+            3.9
+            3.10
+            3.11
+            3.12
+            3.13
+      - name: Set up pip cache
+        if: runner.os == 'Linux'
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+          restore-keys: ${{ runner.os }}-pip-
+      - name: Install Hatch
+        run: pipx install hatch
+      - name: Build dist
+        run: hatch build
+      - name: Publish on PyPI
+        if: github.ref == 'refs/heads/main'
+        env:
+          HATCH_INDEX_AUTH: ${{ secrets.HATCH_INDEX_AUTH }}
+          HATCH_INDEX_USER: ${{ secrets.HATCH_INDEX_USER }}
+        run: hatch publish
