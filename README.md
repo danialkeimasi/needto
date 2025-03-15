@@ -3,6 +3,7 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/needto.svg)](https://pypi.org/project/needto)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/needto.svg)](https://pypi.org/project/needto)
 
+![](./demo.svg)
 
 Needto have an AI assistant in your command line?
 
